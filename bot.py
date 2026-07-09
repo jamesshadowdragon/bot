@@ -1,4 +1,5 @@
 import os
+import asyncio
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -39,7 +40,7 @@ async def on_ready():
         synced = await bot.tree.sync(guild=guild)
         print(f"Synced {len(synced)} slash commands.")
     except Exception as e:
-        print(e)
+        print(f"Failed to sync commands: {e}")
 
 
 async def load_extensions():
@@ -53,9 +54,15 @@ async def load_extensions():
 
 async def main():
     async with bot:
+        # Initialize the SQLite database
+        await database.init_db()
+
+        # Load all cogs
         await load_extensions()
+
+        # Start the bot
         await bot.start(TOKEN)
 
 
-import asyncio
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
