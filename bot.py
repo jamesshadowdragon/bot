@@ -4,6 +4,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import config
+import database
 
 load_dotenv()
 
