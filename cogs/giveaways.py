@@ -185,6 +185,56 @@ class Giveaways(commands.Cog):
         await interaction.edit_original_response(
             content="Giveaway created successfully."
         )
+            @app_commands.command(
+        name="gend",
+        description="End a giveaway manually."
+    )
+    @app_commands.describe(
+        message_id="The giveaway message ID"
+    )
+    async def gend(
+        self,
+        interaction: discord.Interaction,
+        message_id: str
+    ):
+
+        if interaction.guild is None:
+            return
+
+        if interaction.guild.id != config.GUILD_ID:
+            return
+
+        if not interaction.user.guild_permissions.manage_guild:
+            await interaction.response.send_message(
+                "You do not have permission.",
+                ephemeral=True
+            )
+            return
+
+        giveaways = await database.get_active_giveaways()
+
+        for giveaway in giveaways:
+
+            if str(giveaway[0]) == message_id:
+
+                await self.end_giveaway(
+                    giveaway[0],
+                    giveaway[1],
+                    giveaway[3],
+                    giveaway[2]
+                )
+
+                await interaction.response.send_message(
+                    "Giveaway ended.",
+                    ephemeral=True
+                )
+
+                return
+
+        await interaction.response.send_message(
+            "Giveaway not found.",
+            ephemeral=True
+        )
 
 async def setup(bot):
     await bot.add_cog(
