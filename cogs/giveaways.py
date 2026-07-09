@@ -60,12 +60,11 @@ class Giveaways(commands.Cog):
         winners,
         prize
     )
-
     @giveaway_loop.before_loop
-async def before_loop(self):
-    await self.bot.wait_until_ready()
+    async def before_loop(self):
+        await self.bot.wait_until_ready()
 
-async def end_giveaway(self, message_id, channel_id, winners, prize):
+    async def end_giveaway(self, message_id, channel_id, winners, prize):
 
         entries = await database.get_entries(message_id)
 
@@ -75,7 +74,6 @@ async def end_giveaway(self, message_id, channel_id, winners, prize):
         import random
 
         winner_count = min(winners, len(entries))
-
         selected = random.sample(entries, winner_count)
 
         channel = self.bot.get_channel(channel_id)
@@ -85,19 +83,21 @@ async def end_giveaway(self, message_id, channel_id, winners, prize):
 
         try:
             message = await channel.fetch_message(message_id)
-        except:
+        except discord.NotFound:
             return
 
         mentions = []
 
         for user_id in selected:
-
             member = channel.guild.get_member(user_id)
 
             if member:
                 mentions.append(member.mention)
 
-        embed = message.embeds[0]
+        if message.embeds:
+            embed = message.embeds[0]
+        else:
+            embed = discord.Embed(title=prize)
 
         embed.color = discord.Color.green()
 
@@ -107,9 +107,7 @@ async def end_giveaway(self, message_id, channel_id, winners, prize):
             inline=False
         )
 
-        embed.set_footer(
-            text="Giveaway Ended"
-        )
+        embed.set_footer(text="Giveaway Ended")
 
         await message.edit(
             embed=embed,
@@ -121,7 +119,6 @@ async def end_giveaway(self, message_id, channel_id, winners, prize):
         )
 
         await database.end_giveaway(message_id)
-
     @app_commands.command(name="gcreate", description="Create a giveaway.")
     @app_commands.describe(
         duration="Example: 30m, 2h, 1d",
