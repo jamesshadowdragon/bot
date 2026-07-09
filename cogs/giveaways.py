@@ -1,98 +1,88 @@
-# -----------------------------
-# Giveaway Functions
-# -----------------------------
+import discord
+import time
+import re
 
-async def create_giveaway(message_id, channel_id, prize, winners, end_time):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("""
-        INSERT INTO giveaways
-        (message_id, channel_id, prize, winners, end_time, ended)
-        VALUES (?, ?, ?, ?, ?, 0)
-        """, (
-            message_id,
-            channel_id,
-            prize,
-            winners,
-            end_time
-        ))
-        await db.commit()
+from discord.ext import commands, tasks
+from discord import app_commands
+
+import config
+import database
 
 
-async def end_giveaway(message_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute(
-            "UPDATE giveaways SET ended=1 WHERE message_id=?",
-            (message_id,)
+# -------------------------
+# Time Parser
+# -------------------------
+
+TIME_PATTERN = re.compile(r"^(\d+)([smhd])$")
+
+
+def parse_time(text: str):
+
+    text = text.lower()
+
+    match = TIME_PATTERN.match(text)
+
+    if match is None:
+        return None
+
+    amount = int(match.group(1))
+    unit = match.group(2)
+
+    if unit == "s":
+        return amount
+
+    if unit == "m":
+        return amount * 60
+
+    if unit == "h":
+        return amount * 3600
+
+    if unit == "d":
+        return amount * 86400
+
+    return None
+
+
+# -------------------------
+# Giveaway Button
+# -------------------------
+
+class GiveawayButton(discord.ui.Button):
+
+    def __init__(self):
+
+        super().__init__(
+            label="Enter Giveaway",
+            style=discord.ButtonStyle.green,
+            custom_id="giveaway_enter"
         )
-        await db.commit()
 
+    async def callback(self, interaction: discord.Interaction):
 
-async def get_active_giveaways():
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute("""
-        SELECT message_id,
-               channel_id,
-               prize,
-               winners,
-               end_time
-        FROM giveaways
-        WHERE ended=0
-        """)
+        message_id = interaction.message.id
 
-        return await cursor.fetchall()
-
-
-async def add_entry(message_id, user_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-
-        cursor = await db.execute("""
-        SELECT *
-        FROM giveaway_entries
-        WHERE message_id=?
-        AND user_id=?
-        """, (message_id, user_id))
-
-        exists = await cursor.fetchone()
-
-        if exists:
-            return
-
-        await db.execute("""
-        INSERT INTO giveaway_entries
-        (message_id, user_id)
-        VALUES (?, ?)
-        """, (
+        await database.add_entry(
             message_id,
-            user_id
-        ))
+            interaction.user.id
+        )
 
-        await db.commit()
-
-
-async def remove_entry(message_id, user_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("""
-        DELETE FROM giveaway_entries
-        WHERE message_id=?
-        AND user_id=?
-        """, (
-            message_id,
-            user_id
-        ))
-        await db.commit()
+        await interaction.response.send_message(
+            "You have entered this giveaway.",
+            ephemeral=True
+        )
 
 
-async def get_entries(message_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute("""
-        SELECT user_id
-        FROM giveaway_entries
-        WHERE message_id=?
-        """, (message_id,))
+# -------------------------
+# Giveaway View
+# -------------------------
 
-        rows = await cursor.fetchall()
+class GiveawayView(discord.ui.View):
 
-        return [row[0] for row in rows]
+    def __init__(self):
+
+        super().__init__(timeout=None)
+
+        self.add_item(GiveawayButton())
         # -------------------------
 # Giveaway Cog
 # -------------------------
