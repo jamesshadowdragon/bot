@@ -53,14 +53,19 @@ class Giveaways(commands.Cog):
         giveaways = await database.get_active_giveaways()
         now = int(time.time())
         for message_id, channel_id, prize, winners, end_time in giveaways:
-            if now >= end_time:
-                print(f"Giveaway ended: {message_id}")
-                await database.end_giveaway(message_id)
+           if now >= end_time:
+    await self.end_giveaway(
+        message_id,
+        channel_id,
+        winners,
+        prize
+    )
 
     @giveaway_loop.before_loop
-    async def before_loop(self):
-        await self.bot.wait_until_ready()
-            async def end_giveaway(self, message_id, channel_id, winners, prize):
+async def before_loop(self):
+    await self.bot.wait_until_ready()
+
+async def end_giveaway(self, message_id, channel_id, winners, prize):
 
         entries = await database.get_entries(message_id)
 
