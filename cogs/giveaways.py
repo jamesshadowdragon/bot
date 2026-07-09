@@ -235,6 +235,112 @@ class Giveaways(commands.Cog):
             "Giveaway not found.",
             ephemeral=True
         )
+            @app_commands.command(
+        name="greroll",
+        description="Reroll a giveaway."
+    )
+    @app_commands.describe(
+        message_id="The giveaway message ID"
+    )
+    async def greroll(
+        self,
+        interaction: discord.Interaction,
+        message_id: str
+    ):
+
+        if interaction.guild is None:
+            return
+
+        if interaction.guild.id != config.GUILD_ID:
+            return
+
+        if not interaction.user.guild_permissions.manage_guild:
+            await interaction.response.send_message(
+                "You do not have permission.",
+                ephemeral=True
+            )
+            return
+
+        try:
+            message_id = int(message_id)
+        except ValueError:
+            await interaction.response.send_message(
+                "Invalid message ID.",
+                ephemeral=True
+            )
+            return
+
+        entries = await database.get_entries(message_id)
+
+        if len(entries) == 0:
+            await interaction.response.send_message(
+                "No entries found.",
+                ephemeral=True
+            )
+            return
+
+        import random
+
+        winner = random.choice(entries)
+
+        member = interaction.guild.get_member(winner)
+
+        if member is None:
+            await interaction.response.send_message(
+                "Winner is no longer in the server.",
+                ephemeral=True
+            )
+            return
+
+        await interaction.response.send_message(
+            f"New winner: {member.mention}"
+        )
+
+    @app_commands.command(
+        name="glist",
+        description="List active giveaways."
+    )
+    async def glist(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        if interaction.guild is None:
+            return
+
+        if interaction.guild.id != config.GUILD_ID:
+            return
+
+        giveaways = await database.get_active_giveaways()
+
+        if not giveaways:
+            await interaction.response.send_message(
+                "There are no active giveaways.",
+                ephemeral=True
+            )
+            return
+
+        embed = discord.Embed(
+            title="Active Giveaways",
+            color=config.INFO_COLOR
+        )
+
+        for message_id, channel_id, prize, winners, end_time in giveaways:
+
+            embed.add_field(
+                name=prize,
+                value=(
+                    f"Message: `{message_id}`\n"
+                    f"Winners: {winners}\n"
+                    f"Ends: <t:{end_time}:R>"
+                ),
+                inline=False
+            )
+
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral=True
+        )
 
 async def setup(bot):
     await bot.add_cog(
