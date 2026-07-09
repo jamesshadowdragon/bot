@@ -48,18 +48,21 @@ class Giveaways(commands.Cog):
     async def on_ready(self):
         print("Giveaway system loaded.")
 
-    @tasks.loop(seconds=30)
+        @tasks.loop(seconds=30)
     async def giveaway_loop(self):
         giveaways = await database.get_active_giveaways()
         now = int(time.time())
+
         for message_id, channel_id, prize, winners, end_time in giveaways:
-           if now >= end_time:
-    await self.end_giveaway(
-        message_id,
-        channel_id,
-        winners,
-        prize
-    )
+
+            if now >= end_time:
+
+                await self.end_giveaway(
+                    message_id,
+                    channel_id,
+                    winners,
+                    prize
+                )
     @giveaway_loop.before_loop
     async def before_loop(self):
         await self.bot.wait_until_ready()
