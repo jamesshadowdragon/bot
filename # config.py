@@ -1,0 +1,25 @@
+# config.py
+
+# The bot will ignore every other server.
+GUILD_ID = 1524795298323632178
+
+# Channel IDs
+LOG_CHANNEL_ID = 1524795301389406377         # Join/Leave logs
+GIVEAWAY_LOG_CHANNEL_ID = 0 # Giveaway logs
+
+# Reward roles
+# Format:
+# Invite Count : Role ID
+
+INVITE_REWARDS = {
+    5: 1524795298394673376,
+    10: 1524795298394673377,
+    25: 1524795298394673380,
+    50: 1524795298394673380,
+    100: 1524795298394673381,
+}
+
+# Embed Colors
+SUCCESS_COLOR = 0x57F287
+ERROR_COLOR = 0xED4245
+INFO_COLOR = 0x5865F2
